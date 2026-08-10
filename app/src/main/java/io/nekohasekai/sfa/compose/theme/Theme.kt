@@ -32,8 +32,9 @@ private val LightColorScheme =
 @Composable
 fun SFATheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    // Dynamic color (Android 12+) derives the palette from the device wallpaper,
+    // which drowns out Atlas's own brand colors — always use the fixed scheme below.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme =
