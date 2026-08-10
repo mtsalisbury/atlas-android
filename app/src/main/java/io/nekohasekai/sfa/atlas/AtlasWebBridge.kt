@@ -6,6 +6,7 @@ import io.nekohasekai.sfa.bg.BoxService
 import io.nekohasekai.sfa.compose.MainActivity
 import io.nekohasekai.sfa.database.Settings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -51,6 +52,19 @@ class AtlasWebBridge(
                 JSONObject().put("ok", true)
             } catch (e: Exception) {
                 JSONObject().put("ok", false).put("error", e.message ?: "enrollment failed")
+            }
+            if (result.optBoolean("ok")) {
+                // ProfileManager.create(andSelect = true) inside enrollWithToken
+                // only changes which profile is *selected* -- an already-running
+                // service keeps serving whatever config it loaded at its own
+                // last start, same class of bug as DashboardViewModel.
+                // selectProfile()'s own restart-on-change handling. Unconditional
+                // stop is a safe no-op when nothing was running (BoxService.stop()
+                // just sends a broadcast); the fixed delay is a simplification of
+                // that ViewModel's real status-polling loop, good enough for a
+                // profile that was *just* created rather than a live switch.
+                BoxService.stop()
+                delay(800L)
             }
             withContext(Dispatchers.Main) {
                 callback("onEnrollResult", result.toString())
