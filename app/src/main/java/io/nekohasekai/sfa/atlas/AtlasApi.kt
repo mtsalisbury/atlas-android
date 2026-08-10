@@ -7,7 +7,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Talks to the real Atlas backend (dashboard.rpnwireless.com) directly --
+ * Talks to the real Atlas backend (dashboard.layer9i.com) directly --
  * no Tailscale, no local mock files. Blocking calls; callers must run these
  * off the main thread (Dispatchers.IO), same as the app's own HTTPClient.
  *
@@ -17,7 +17,7 @@ import java.net.URL
  * the device and produces a working config.
  */
 object AtlasApi {
-    private const val BASE_URL = "https://dashboard.rpnwireless.com"
+    private const val BASE_URL = "https://dashboard.layer9i.com"
 
     class AtlasApiException(message: String) : Exception(message)
 
