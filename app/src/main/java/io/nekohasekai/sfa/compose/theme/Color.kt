@@ -2,9 +2,9 @@ package io.nekohasekai.sfa.compose.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Atlas brand colors (matches docs/assets/atlas-mark.svg / presence.html's --accent)
-val SingBoxPrimary = Color(0xFF555BD6)
-val SingBoxPrimaryDark = Color(0xFF3B3F97)
+// Atlas brand colors (matches presence.html's --accent / --accent-bright, the real product)
+val SingBoxPrimary = Color(0xFF5659DD)
+val SingBoxPrimaryDark = Color(0xFF3C3E9B)
 val SingBoxPrimaryLight = Color(0xFF7275E8)
 
 // Service status colors
@@ -23,7 +23,7 @@ val LogBlueLight = Color(0xFF00A6B2)
 val LogWhite = Color(0xFFECECEC)
 
 // Material You seed color
-val SeedColor = Color(0xFF555BD6)
+val SeedColor = Color(0xFF5659DD)
 
 // Additional semantic colors
 val SuccessGreen = Color(0xFF4CAF50)
