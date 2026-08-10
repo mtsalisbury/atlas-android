@@ -22,7 +22,17 @@ object AtlasEnrollment {
     /** Runs blocking network + file I/O. Call this off the main thread. */
     suspend fun signInAndEnroll(context: Context, email: String, password: String) {
         val token = AtlasApi.login(email, password)
+        enrollWithToken(context, token)
+        Settings.atlasEmail = email
+    }
 
+    /**
+     * Same enrollment as signInAndEnroll, minus the login step -- for the
+     * WebView bridge, where presence.html (running in-app) already owns the
+     * sign-in flow and hands over a presence token it already has, rather
+     * than the app collecting email/password a second time.
+     */
+    suspend fun enrollWithToken(context: Context, token: String) {
         val deviceLabel = android.os.Build.MODEL.ifBlank { "android-device" }
         val configContent = AtlasApi.enrollNative(token, deviceLabel)
         Libbox.checkConfig(configContent)
@@ -44,7 +54,6 @@ object AtlasEnrollment {
         ProfileManager.create(profile, andSelect = true)
 
         Settings.atlasPresenceToken = token
-        Settings.atlasEmail = email
     }
 
     fun signOut() {

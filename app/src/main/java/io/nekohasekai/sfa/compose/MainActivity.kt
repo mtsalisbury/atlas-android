@@ -132,7 +132,7 @@ import io.nekohasekai.sfa.constant.Action
 import io.nekohasekai.sfa.constant.Alert
 import io.nekohasekai.sfa.constant.ServiceMode
 import io.nekohasekai.sfa.constant.Status
-import io.nekohasekai.sfa.atlas.AtlasSignInScreen
+import io.nekohasekai.sfa.atlas.AtlasWebViewScreen
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.ktx.hasPermission
 import io.nekohasekai.sfa.ktx.launchCustomTab
@@ -165,6 +165,12 @@ class MainActivity :
     private var newProfileArgs by mutableStateOf(NewProfileArgs())
     private var parseImportLocalProfileJob: Job? = null
     private var pendingIntentErrorMessage by mutableStateOf<String?>(null)
+
+    /** Set by AtlasWebViewScreen while it's on screen -- lets AtlasWebBridge
+     * call back into the page (window.AtlasCallbacks.*) from a background
+     * thread's result without threading a WebView reference through every
+     * bridge method call. */
+    var currentWebView: android.webkit.WebView? = null
 
     private val notificationPermissionLauncher =
         registerForActivityResult(
@@ -361,14 +367,20 @@ class MainActivity :
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SFAApp() {
-        // Atlas sign-in gate. Real signup replaces SFA's generic
-        // "Add Profile" flow entirely -- signing in IS the enrollment, no
-        // separate device name/URL/platform choice. See STATUS.md Part -20.
-        var isAtlasSignedIn by remember { mutableStateOf(Settings.atlasPresenceToken.isNotBlank()) }
-        if (!isAtlasSignedIn) {
-            AtlasSignInScreen(onSignedIn = { isAtlasSignedIn = true })
+        // presence.html (the real product's web portal) is the app's actual
+        // front door now, not a native reimplementation of sign-in -- it
+        // owns identity, Lens, Devices, Account. The native nav graph below
+        // is reached only via AtlasWebBridge.openNativeDashboard(), for the
+        // one thing a web page structurally can't do: hold a VPN open.
+        var showNativeDashboard by remember { mutableStateOf(false) }
+        if (!showNativeDashboard) {
+            AtlasWebViewScreen(
+                activity = this@MainActivity,
+                onOpenNativeDashboard = { showNativeDashboard = true },
+            )
             return
         }
+        BackHandler { showNativeDashboard = false }
 
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
