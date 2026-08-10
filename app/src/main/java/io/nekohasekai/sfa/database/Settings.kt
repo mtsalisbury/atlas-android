@@ -126,6 +126,12 @@ object Settings {
     var tailscaleSSHFontSize by dataStore.int(SettingsKey.TAILSCALE_SSH_FONT_SIZE) { 14 }
     var tailscaleSSHCustomFontPath by dataStore.string(SettingsKey.TAILSCALE_SSH_CUSTOM_FONT_PATH)
 
+    // Atlas — presence token is stored empty until sign-in; its presence is
+    // what gates showing the sign-in screen vs. the normal app in
+    // MainActivity's SFAApp(). See STATUS.md Part -20.
+    var atlasPresenceToken by dataStore.string(SettingsKey.ATLAS_PRESENCE_TOKEN) { "" }
+    var atlasEmail by dataStore.string(SettingsKey.ATLAS_EMAIL) { "" }
+
     var cachedUpdateInfo by dataStore.string(SettingsKey.CACHED_UPDATE_INFO) { "" }
     var cachedApkPath by dataStore.string(SettingsKey.CACHED_APK_PATH) { "" }
     var lastShownUpdateVersion by dataStore.int(SettingsKey.LAST_SHOWN_UPDATE_VERSION) { 0 }

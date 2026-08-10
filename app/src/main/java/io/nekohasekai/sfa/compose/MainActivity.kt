@@ -132,6 +132,7 @@ import io.nekohasekai.sfa.constant.Action
 import io.nekohasekai.sfa.constant.Alert
 import io.nekohasekai.sfa.constant.ServiceMode
 import io.nekohasekai.sfa.constant.Status
+import io.nekohasekai.sfa.atlas.AtlasSignInScreen
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.ktx.hasPermission
 import io.nekohasekai.sfa.ktx.launchCustomTab
@@ -360,6 +361,15 @@ class MainActivity :
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun SFAApp() {
+        // Atlas sign-in gate. Real signup replaces SFA's generic
+        // "Add Profile" flow entirely -- signing in IS the enrollment, no
+        // separate device name/URL/platform choice. See STATUS.md Part -20.
+        var isAtlasSignedIn by remember { mutableStateOf(Settings.atlasPresenceToken.isNotBlank()) }
+        if (!isAtlasSignedIn) {
+            AtlasSignInScreen(onSignedIn = { isAtlasSignedIn = true })
+            return
+        }
+
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination

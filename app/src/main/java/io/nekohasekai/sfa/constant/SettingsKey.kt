@@ -53,6 +53,10 @@ object SettingsKey {
     const val TAILSCALE_SSH_FONT_SIZE = "tailscale_ssh_font_size"
     const val TAILSCALE_SSH_CUSTOM_FONT_PATH = "tailscale_ssh_custom_font_path"
 
+    // Atlas
+    const val ATLAS_PRESENCE_TOKEN = "atlas_presence_token"
+    const val ATLAS_EMAIL = "atlas_email"
+
     // cache
     const val STARTED_BY_USER = "started_by_user"
     const val CACHED_UPDATE_INFO = "cached_update_info"
