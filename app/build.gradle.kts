@@ -19,6 +19,7 @@ plugins {
 }
 
 fun getProps(propName: String): String {
+    System.getenv(propName)?.takeIf { it.isNotBlank() }?.let { return it }
     val propsInEnv = System.getenv("LOCAL_PROPERTIES")
     if (propsInEnv != null) {
         val props = Properties()
@@ -38,6 +39,24 @@ fun getProps(propName: String): String {
         }
     }
     return ""
+}
+
+fun getKeychainSecret(account: String): String {
+    if (!System.getProperty("os.name").contains("Mac", ignoreCase = true)) return ""
+    return runCatching {
+        providers.exec {
+            commandLine(
+                "security",
+                "find-generic-password",
+                "-a",
+                account,
+                "-s",
+                "Project Atlas Android",
+                "-w",
+            )
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim()
+    }.getOrDefault("")
 }
 
 fun getVersionProps(propName: String): String {
@@ -68,26 +87,32 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.nekohasekai.sfa"
+        applicationId = "com.layer9i.atlas"
         minSdk = 24
         targetSdk = 37
         versionCode = getVersionProps("VERSION_CODE").toInt()
         versionName = getVersionProps("VERSION_NAME")
-        base.archivesName.set("SFA-${versionName}")
+        base.archivesName.set("Atlas-${versionName}")
     }
 
     signingConfigs {
         create("release") {
-            storeFile = file("release.keystore")
-            storePassword = getProps("KEYSTORE_PASS")
-            keyAlias = getProps("ALIAS_NAME")
-            keyPassword = getProps("ALIAS_PASS")
+            storeFile = file(
+                getProps("ATLAS_KEYSTORE_PATH").ifBlank {
+                    "${System.getProperty("user.home")}/.atlas/keys/atlas-upload.jks"
+                },
+            )
+            storePassword = getProps("ATLAS_KEYSTORE_PASS").ifBlank {
+                getKeychainSecret("atlas-upload-key")
+            }
+            keyAlias = "atlas-upload"
+            keyPassword = getProps("ATLAS_KEY_ALIAS_PASS").ifBlank { storePassword }
         }
     }
 
     buildTypes {
         debug {
-            if (getProps("KEYSTORE_PASS").isNotEmpty()) {
+            if (signingConfigs.getByName("release").storeFile?.exists() == true) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
