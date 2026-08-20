@@ -235,6 +235,15 @@ dependencies {
     implementation("androidx.navigation:navigation-fragment-ktx:2.9.8")
     implementation("androidx.navigation:navigation-ui-ktx:2.9.8")
     implementation("com.google.zxing:core:3.5.4")
+    // TODO(Edge pairing): add Espressif's open-source BLE provisioning SDK
+    // (esp-idf-provisioning-android) so AtlasEdgePairing.kt can perform the
+    // real protocomm security handshake (X25519/AES-GCM) instead of us
+    // reimplementing it. Left commented rather than guessed: confirm the
+    // exact current Maven coordinate and repository (may need
+    // maven { url = uri("https://jitpack.io") } added to settings.gradle.kts)
+    // from https://github.com/espressif/esp-idf-provisioning-android before
+    // enabling -- do not uncomment with an unverified coordinate.
+    // implementation("com.github.espressif:esp-idf-provisioning-android:<version>")
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.3.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")

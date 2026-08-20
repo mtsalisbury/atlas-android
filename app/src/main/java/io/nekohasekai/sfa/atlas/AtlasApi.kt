@@ -62,4 +62,27 @@ object AtlasApi {
         request("/api/presence/enroll/native", token = token, body = JSONObject().put("device_label", deviceLabel))
             .getJSONObject("singbox_config")
             .toString()
+
+    data class EdgeEnrollmentToken(val token: String, val expiresInSeconds: Int)
+
+    /**
+     * Mints a single-use, short-TTL Edge device enrollment token -- the ONLY
+     * place X-Presence-Token is used in the whole Edge pairing flow. The
+     * returned token is what actually gets sent to the board over BLE (see
+     * AtlasEdgePairing); it carries none of the account token's standing
+     * power, expiring in minutes and burned server-side on first redemption
+     * by the firmware itself. Mirrors the web Edge screen's identical call
+     * to POST /enroll/edge/token (presence.html).
+     */
+    fun mintEdgeEnrollmentToken(token: String, deviceLabel: String): EdgeEnrollmentToken {
+        val json = request(
+            "/api/presence/enroll/edge/token",
+            token = token,
+            body = JSONObject().put("device_label", deviceLabel),
+        )
+        return EdgeEnrollmentToken(
+            token = json.getString("token"),
+            expiresInSeconds = json.optInt("expires_in_seconds", 300),
+        )
+    }
 }
