@@ -112,9 +112,12 @@ class AtlasWebBridge(
     }
 
     @JavascriptInterface
-    fun openNativeDashboard() {
+    fun openAdvancedTools() {
         activity.runOnUiThread { onOpenNativeDashboard() }
     }
+
+    @JavascriptInterface
+    fun openNativeDashboard() = openAdvancedTools()
 
     @JavascriptInterface
     fun signOut() {
