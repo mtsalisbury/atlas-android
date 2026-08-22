@@ -19,6 +19,8 @@ import java.io.File
  * it rather than inventing a second convention.
  */
 object AtlasEnrollment {
+    fun deviceLabel(): String = android.os.Build.MODEL.ifBlank { "android-device" }
+
     /** Runs blocking network + file I/O. Call this off the main thread. */
     suspend fun signInAndEnroll(context: Context, email: String, password: String) {
         val token = AtlasApi.login(email, password)
@@ -33,8 +35,7 @@ object AtlasEnrollment {
      * than the app collecting email/password a second time.
      */
     suspend fun enrollWithToken(context: Context, token: String) {
-        val deviceLabel = android.os.Build.MODEL.ifBlank { "android-device" }
-        val configContent = AtlasApi.enrollNative(token, deviceLabel)
+        val configContent = AtlasApi.enrollNative(token, deviceLabel())
         Libbox.checkConfig(configContent)
 
         val fileID = ProfileManager.nextFileID()

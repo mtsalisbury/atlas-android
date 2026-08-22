@@ -85,6 +85,13 @@ class AtlasWebBridge(
     @JavascriptInterface
     fun isSignedIn(): Boolean = Settings.atlasPresenceToken.isNotBlank()
 
+    /**
+     * Must match the label used by AtlasEnrollment so a shared Lens
+     * verification updates this device's own continuity record.
+     */
+    @JavascriptInterface
+    fun getDeviceLabel(): String = AtlasEnrollment.deviceLabel()
+
     @JavascriptInterface
     fun getConnectionStatus(): String {
         val signedIn = Settings.atlasPresenceToken.isNotBlank()
