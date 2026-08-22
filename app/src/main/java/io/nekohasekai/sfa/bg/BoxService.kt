@@ -443,6 +443,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 return@start
             }
             networkTransitionHandled = true
+            Settings.atlasConnectionStateOverride = "network_changed"
             Log.i(
                 TAG,
                 "physical_network_transition_disconnect from=${previous.name.lowercase()} to=${transport.name.lowercase()}",

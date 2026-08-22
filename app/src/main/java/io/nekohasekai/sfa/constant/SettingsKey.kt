@@ -56,6 +56,7 @@ object SettingsKey {
     // Atlas
     const val ATLAS_PRESENCE_TOKEN = "atlas_presence_token"
     const val ATLAS_EMAIL = "atlas_email"
+    const val ATLAS_CONNECTION_STATE_OVERRIDE = "atlas_connection_state_override"
 
     // cache
     const val STARTED_BY_USER = "started_by_user"

@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="atlas_network_state_channel">Atlas network changes</string>
-    <string name="atlas_network_state_title">Network state changed</string>
-    <string name="atlas_network_state_body">Atlas has disconnected to restore your internet. Tap Reconnect Atlas when you are ready.</string>
-    <string name="atlas_reconnect">Reconnect Atlas</string>
+    <string name="atlas_network_state_title">Network changed</string>
+    <string name="atlas_network_state_body">Atlas paused your Presence to restore internet access.</string>
+    <string name="atlas_reconnect">Reconnect my Presence</string>
     <!-- App -->
     <string name="app_name" translatable="false">Atlas</string>
     <string name="app_version_title">App version</string>

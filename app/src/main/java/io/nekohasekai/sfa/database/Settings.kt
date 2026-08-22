@@ -131,6 +131,7 @@ object Settings {
     // MainActivity's SFAApp(). See STATUS.md Part -20.
     var atlasPresenceToken by dataStore.string(SettingsKey.ATLAS_PRESENCE_TOKEN) { "" }
     var atlasEmail by dataStore.string(SettingsKey.ATLAS_EMAIL) { "" }
+    var atlasConnectionStateOverride by dataStore.string(SettingsKey.ATLAS_CONNECTION_STATE_OVERRIDE) { "" }
 
     var cachedUpdateInfo by dataStore.string(SettingsKey.CACHED_UPDATE_INFO) { "" }
     var cachedApkPath by dataStore.string(SettingsKey.CACHED_APK_PATH) { "" }

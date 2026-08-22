@@ -309,6 +309,7 @@ class MainActivity :
 
     private fun reconnectAtlasFromNotification() {
         lifecycleScope.launch {
+            Settings.atlasConnectionStateOverride = ""
             if (currentServiceStatus == Status.Started) {
                 BoxService.stop()
             }
@@ -349,6 +350,7 @@ class MainActivity :
 
     private fun startService0() {
         lifecycleScope.launch(Dispatchers.IO) {
+            Settings.atlasConnectionStateOverride = ""
             if (Settings.rebuildServiceMode()) {
                 connection.reconnect()
             }
@@ -1464,6 +1466,8 @@ class MainActivity :
     override fun onServiceStatusChanged(status: Status) {
         currentServiceStatus = status
     }
+
+    fun atlasServiceStatus(): Status = currentServiceStatus
 
     fun reconnect() {
         connection.reconnect()

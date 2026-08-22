@@ -4,6 +4,7 @@ import android.webkit.JavascriptInterface
 import androidx.lifecycle.lifecycleScope
 import io.nekohasekai.sfa.bg.BoxService
 import io.nekohasekai.sfa.compose.MainActivity
+import io.nekohasekai.sfa.constant.Status
 import io.nekohasekai.sfa.database.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -77,25 +78,38 @@ class AtlasWebBridge(
 
     @JavascriptInterface
     fun disconnect() {
+        Settings.atlasConnectionStateOverride = ""
         activity.lifecycleScope.launch(Dispatchers.IO) { BoxService.stop() }
     }
 
     @JavascriptInterface
     fun isSignedIn(): Boolean = Settings.atlasPresenceToken.isNotBlank()
 
-    /**
-     * Approximate, not a live service binding (out of scope for this first
-     * pass) -- reflects the user's last start/stop intent, not real-time
-     * tunnel health. Good enough for presence.html to decide what to show;
-     * a real "Connection" native screen (openNativeDashboard) is the place
-     * for live, accurate status.
-     */
     @JavascriptInterface
-    fun getConnectionStatus(): String =
-        JSONObject()
-            .put("signedIn", Settings.atlasPresenceToken.isNotBlank())
-            .put("started", Settings.startedByUser)
+    fun getConnectionStatus(): String {
+        val signedIn = Settings.atlasPresenceToken.isNotBlank()
+        val profileInstalled = Settings.selectedProfile >= 0
+        val serviceStatus = activity.atlasServiceStatus()
+        val override = Settings.atlasConnectionStateOverride
+        val state =
+            when {
+                !profileInstalled -> "not_added"
+                override.isNotBlank() && serviceStatus == Status.Stopped -> override
+                serviceStatus == Status.Starting -> "activating"
+                serviceStatus == Status.Started -> "active"
+                serviceStatus == Status.Stopping -> "pausing"
+                else -> "paused"
+            }
+        return JSONObject()
+            .put("contractVersion", 1)
+            .put("signedIn", signedIn)
+            .put("profileInstalled", profileInstalled)
+            .put("state", state)
+            .put("started", serviceStatus == Status.Started || serviceStatus == Status.Starting)
+            .put("canConnect", signedIn && profileInstalled && serviceStatus == Status.Stopped)
+            .put("canDisconnect", serviceStatus == Status.Started || serviceStatus == Status.Starting)
             .toString()
+    }
 
     @JavascriptInterface
     fun openNativeDashboard() {
