@@ -8,6 +8,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
@@ -48,6 +50,8 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     companion object {
         private const val PROFILE_UPDATE_INTERVAL = 15L * 60 * 1000 // 15 minutes in milliseconds
         private const val TAG = "BoxService"
+        private const val NETWORK_STATE_NOTIFICATION_CHANNEL = "atlas_network_state"
+        private const val NETWORK_STATE_NOTIFICATION_ID = 902
 
         fun start() {
             val intent =
@@ -74,6 +78,14 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     private val binder = ServiceBinder(status)
     private val notification = ServiceNotification(status, service)
     private lateinit var commandServer: CommandServer
+    private val networkTransitionListenerKey = Any()
+    private var lastPhysicalTransport: PhysicalTransport? = null
+    private var networkTransitionHandled = false
+
+    private enum class PhysicalTransport {
+        WIFI,
+        CELLULAR,
+    }
 
     private var receiverRegistered = false
     private val receiver =
@@ -131,6 +143,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             }
 
             DefaultNetworkMonitor.start()
+            startNetworkTransitionGuard()
 
             try {
                 commandServer.startOrReloadService(
@@ -285,6 +298,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 pfd.close()
                 fileDescriptor = null
             }
+            DefaultNetworkListener.stop(networkTransitionListenerKey)
             DefaultNetworkMonitor.stop()
             closeService()
             commandServer.apply {
@@ -314,6 +328,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             pfd.close()
             fileDescriptor = null
         }
+        DefaultNetworkListener.stop(networkTransitionListenerKey)
         DefaultNetworkMonitor.stop()
         if (::commandServer.isInitialized) {
             closeService()
@@ -415,6 +430,73 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             }
             Application.notification.notify(notification.typeID, builder.build())
         }
+    }
+
+    private suspend fun startNetworkTransitionGuard() {
+        lastPhysicalTransport = null
+        networkTransitionHandled = false
+        DefaultNetworkListener.start(networkTransitionListenerKey) { network ->
+            val transport = physicalTransport(network) ?: return@start
+            val previous = lastPhysicalTransport
+            lastPhysicalTransport = transport
+            if (previous == null || previous == transport || networkTransitionHandled || status.value != Status.Started) {
+                return@start
+            }
+            networkTransitionHandled = true
+            Log.i(
+                TAG,
+                "physical_network_transition_disconnect from=${previous.name.lowercase()} to=${transport.name.lowercase()}",
+            )
+            GlobalScope.launch(Dispatchers.Main) {
+                showNetworkTransitionNotification()
+                stopService()
+            }
+        }
+    }
+
+    private fun physicalTransport(network: Network?): PhysicalTransport? {
+        val capabilities = network?.let(Application.connectivity::getNetworkCapabilities) ?: return null
+        return when {
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> PhysicalTransport.WIFI
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> PhysicalTransport.CELLULAR
+            else -> null
+        }
+    }
+
+    private fun showNetworkTransitionNotification() {
+        if (!ServiceNotification.checkPermission()) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Application.notification.createNotificationChannel(
+                NotificationChannel(
+                    NETWORK_STATE_NOTIFICATION_CHANNEL,
+                    service.getString(R.string.atlas_network_state_channel),
+                    NotificationManager.IMPORTANCE_HIGH,
+                ),
+            )
+        }
+        val reconnectIntent =
+            PendingIntent.getActivity(
+                service,
+                NETWORK_STATE_NOTIFICATION_ID,
+                Intent(service, MainActivity::class.java).apply {
+                    action = Action.ATLAS_RECONNECT
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                },
+                ServiceNotification.flags or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        val notification =
+            NotificationCompat.Builder(service, NETWORK_STATE_NOTIFICATION_CHANNEL)
+                .setSmallIcon(R.drawable.ic_menu)
+                .setContentTitle(service.getString(R.string.atlas_network_state_title))
+                .setContentText(service.getString(R.string.atlas_network_state_body))
+                .setStyle(NotificationCompat.BigTextStyle().bigText(service.getString(R.string.atlas_network_state_body)))
+                .setCategory(NotificationCompat.CATEGORY_ERROR)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(reconnectIntent)
+                .addAction(0, service.getString(R.string.atlas_reconnect), reconnectIntent)
+                .build()
+        Application.notification.notify(NETWORK_STATE_NOTIFICATION_ID, notification)
     }
 
     override fun triggerNativeCrash() {

@@ -258,6 +258,10 @@ class MainActivity :
         if (intent == null) {
             return
         }
+        if (intent.action == Action.ATLAS_RECONNECT) {
+            reconnectAtlasFromNotification()
+            return
+        }
         if (intent.categories?.contains("de.robv.android.xposed.category.MODULE_SETTINGS") == true) {
             pendingNavigationRoute.value = "settings/privilege"
         }
@@ -300,6 +304,18 @@ class MainActivity :
                         }
                     }
                 }
+        }
+    }
+
+    private fun reconnectAtlasFromNotification() {
+        lifecycleScope.launch {
+            if (currentServiceStatus == Status.Started) {
+                BoxService.stop()
+            }
+            while (currentServiceStatus != Status.Stopped) {
+                delay(100L)
+            }
+            startService()
         }
     }
 
