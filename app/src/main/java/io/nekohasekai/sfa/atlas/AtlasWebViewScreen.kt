@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.nekohasekai.sfa.compose.MainActivity
+import io.nekohasekai.sfa.constant.Status
 import io.nekohasekai.sfa.database.Settings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -74,8 +75,8 @@ private suspend fun atlasHealthReachable(): Boolean = withContext(Dispatchers.IO
     runCatching {
         (URL(HEALTH_URL).openConnection() as HttpURLConnection).run {
             requestMethod = "HEAD"
-            connectTimeout = 6_000
-            readTimeout = 6_000
+            connectTimeout = 1_500
+            readTimeout = 1_500
             useCaches = false
             responseCode in 200..499
         }
@@ -107,14 +108,16 @@ fun AtlasWebViewScreen(
 
     LaunchedEffect(Unit) {
         while (true) {
-            connectionHealth = if (!Settings.startedByUser) {
-                AtlasAndroidHealth.Disconnected
-            } else if (atlasHealthReachable()) {
-                AtlasAndroidHealth.Healthy
-            } else {
-                AtlasAndroidHealth.Stalled
+            connectionHealth = when (activity.atlasServiceStatus()) {
+                Status.Started -> if (atlasHealthReachable()) {
+                    AtlasAndroidHealth.Healthy
+                } else {
+                    AtlasAndroidHealth.Stalled
+                }
+                Status.Starting -> AtlasAndroidHealth.Checking
+                Status.Stopping, Status.Stopped -> AtlasAndroidHealth.Disconnected
             }
-            delay(15_000)
+            delay(2_000)
         }
     }
 
