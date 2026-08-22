@@ -1013,11 +1013,13 @@ class MainActivity :
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        IconButton(onClick = { showNativeDashboard = false }) {
+                        TextButton(onClick = { showNativeDashboard = false }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.atlas_back_to_lens),
+                                contentDescription = null,
                             )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.atlas_lens))
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -1030,9 +1032,6 @@ class MainActivity :
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                        }
-                        TextButton(onClick = { showNativeDashboard = false }) {
-                            Text(stringResource(R.string.atlas_lens))
                         }
                     }
                 }

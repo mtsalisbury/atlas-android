@@ -6,7 +6,6 @@
     <string name="atlas_reconnect">Reconnect my Presence</string>
     <string name="atlas_advanced_tools">Advanced tools</string>
     <string name="atlas_advanced_tools_description">Connection and diagnostics</string>
-    <string name="atlas_back_to_lens">Back to Lens</string>
     <string name="atlas_lens">Lens</string>
     <!-- App -->
     <string name="app_name" translatable="false">Atlas</string>
