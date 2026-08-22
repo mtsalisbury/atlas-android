@@ -18,7 +18,7 @@ Do not add the upload key, its password, or Google service-account credentials t
 1. Sign in to Google Play Console with the organization account that will own Atlas.
 2. Create an app named **Project Atlas** and complete the required app/contact declarations.
 3. Open **Testing > Internal testing** and create a release.
-4. Upload `app/build/outputs/bundle/playRelease/Atlas-1.14.0-beta.12-play-release.aab`.
+4. Upload `app/build/outputs/bundle/playRelease/Atlas-1.14.0-beta.13-play-release.aab` (SHA-256 `5d4a6e7b87961ac218c38d6d68ece800a5ba7c39b8b6b3c8544acb6cede39a96`).
 5. Accept Google Play App Signing when prompted. The local Atlas key remains the upload key.
 6. Create an email tester list using the Google accounts on the Android phones and tablets.
 7. Roll out the internal release, copy its opt-in link, and open that link on each test device.
@@ -31,7 +31,7 @@ Google Play internal testing supports up to 100 testers. Updates use the normal 
 On this Mac, from the Android repository:
 
 ```sh
-JAVA_HOME=/usr/local/Cellar/openjdk@17/17.0.20/libexec/openjdk.jdk/Contents/Home \
+JAVA_HOME='/Applications/Android Studio.app/Contents/jbr/Contents/Home' \
 ANDROID_HOME=/Users/mikesalisbury/Library/Android/sdk \
 ./gradlew :app:bundlePlayRelease --console=plain
 ```
@@ -41,3 +41,5 @@ The build reads the signing password from macOS Keychain. It can also use the en
 ## Optional upload automation
 
 After the first manual release, a Google Play service account can be connected for automated uploads. Store its credentials as `service-account-credentials.json`; that filename is already excluded from Git.
+
+As of August 22, 2026, beta.13 builds and signs successfully. Upload and physical-device verification remain pending because Play service-account credentials and an attached Android device are not currently available.
