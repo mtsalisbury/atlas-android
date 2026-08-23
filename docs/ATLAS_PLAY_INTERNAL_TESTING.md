@@ -42,8 +42,8 @@ The build reads the signing password from macOS Keychain. It can also use the en
 
 After the first manual release, a Google Play service account can be connected for automated uploads. Store its credentials as `service-account-credentials.json`; that filename is already excluded from Git.
 
-As of August 22, 2026, beta.13 builds and signs successfully. Upload and physical-device verification remain pending because Play service-account credentials and an attached Android device are not currently available.
+As of August 22, 2026, beta.14 build 718 produces a signed universal APK. Google Play upload and physical-device verification remain pending because Play service-account credentials and an attached Android device are not currently available.
 
 ## Private portal APK
 
-For testing before the Google Play organization account is available, `:app:assemblePlayRelease` produces a signed universal APK. The current portal artifact is `Atlas-1.14.0-beta.13-play-universal.apk` (SHA-256 `741a196cbbf6a42320edfc197f8ba60daad4189c7834df540147ea2e949964e7`). It is staged under the stable portal name `Atlas-Android.apk`; release binaries remain outside Git. This proves direct installation and app behavior, but it does not replace the later Google Play installation/update test.
+For testing before the Google Play organization account is available, `:app:assemblePlayRelease` produces a signed universal APK. The current portal artifact is `Atlas-1.14.0-beta.14-play-universal.apk`, build 718 (SHA-256 `1e9d0b1a4dd98731204f804e6a2d4e198ec8bd4eff7b1b87652ed8d8aeacb9cb`). It is published under the stable protected-portal name `Atlas-Android.apk`; release binaries remain outside Git. This proves the signed release can be distributed directly, but it does not replace physical-device or later Google Play installation/update testing.
