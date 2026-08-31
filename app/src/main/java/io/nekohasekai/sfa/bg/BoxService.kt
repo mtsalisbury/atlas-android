@@ -30,6 +30,7 @@ import io.nekohasekai.libbox.PlatformInterface
 import io.nekohasekai.libbox.SystemProxyStatus
 import io.nekohasekai.sfa.Application
 import io.nekohasekai.sfa.R
+import io.nekohasekai.sfa.atlas.AtlasEnrollment
 import io.nekohasekai.sfa.compose.MainActivity
 import io.nekohasekai.sfa.constant.Action
 import io.nekohasekai.sfa.constant.Alert
@@ -42,6 +43,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -443,14 +445,56 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 return@start
             }
             networkTransitionHandled = true
-            Settings.atlasConnectionStateOverride = "network_changed"
             Log.i(
                 TAG,
-                "physical_network_transition_disconnect from=${previous.name.lowercase()} to=${transport.name.lowercase()}",
+                "physical_network_transition_refresh from=${previous.name.lowercase()} to=${transport.name.lowercase()}",
             )
-            GlobalScope.launch(Dispatchers.Main) {
-                showNetworkTransitionNotification()
-                stopService()
+            GlobalScope.launch(Dispatchers.IO) {
+                val refreshed = runCatching {
+                    var lastError: Throwable? = null
+                    repeat(3) { attempt ->
+                        try {
+                            val content = AtlasEnrollment.refreshSelectedProfile(Settings.atlasPresenceToken)
+                            commandServer.startOrReloadService(
+                                content,
+                                OverrideOptions().apply {
+                                    autoRedirect = Settings.autoRedirect
+                                    if (Vendor.isPerAppProxyAvailable() && Settings.perAppProxyEnabled) {
+                                        val appList = Settings.getEffectivePerAppProxyList()
+                                        if (Settings.getEffectivePerAppProxyMode() == Settings.PER_APP_PROXY_INCLUDE) {
+                                            includePackage =
+                                                PlatformInterfaceWrapper.StringArray(
+                                                    (appList + Application.application.packageName).iterator(),
+                                                )
+                                        } else {
+                                            excludePackage =
+                                                PlatformInterfaceWrapper.StringArray(
+                                                    (appList - Application.application.packageName).iterator(),
+                                                )
+                                        }
+                                    }
+                                },
+                            )
+                            return@runCatching
+                        } catch (error: Throwable) {
+                            lastError = error
+                            if (attempt < 2) delay(1_500L)
+                        }
+                    }
+                    throw lastError ?: error("Atlas refresh failed")
+                }
+                if (refreshed.isSuccess) {
+                    Settings.atlasConnectionStateOverride = ""
+                    networkTransitionHandled = false
+                    Log.i(TAG, "physical_network_transition_refresh_succeeded")
+                } else {
+                    Settings.atlasConnectionStateOverride = "network_changed"
+                    Log.e(TAG, "physical_network_transition_refresh_failed", refreshed.exceptionOrNull())
+                    withContext(Dispatchers.Main) {
+                        showNetworkTransitionNotification()
+                        stopService()
+                    }
+                }
             }
         }
     }

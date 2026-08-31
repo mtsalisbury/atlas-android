@@ -1,6 +1,7 @@
 package io.nekohasekai.sfa.atlas
 
 import android.content.Context
+import android.util.AtomicFile
 import io.nekohasekai.libbox.Libbox
 import io.nekohasekai.sfa.database.Profile
 import io.nekohasekai.sfa.database.ProfileManager
@@ -55,6 +56,35 @@ object AtlasEnrollment {
         ProfileManager.create(profile, andSelect = true)
 
         Settings.atlasPresenceToken = token
+    }
+
+    /**
+     * Refresh the selected Atlas profile after the physical network changes.
+     * The backend response carries the account's current route mode, signed
+     * policy materialization, and config version, so re-enrolling is the
+     * Android equivalent of the Apple clients' network-path refresh.
+     */
+    suspend fun refreshSelectedProfile(token: String): String {
+        require(token.isNotBlank()) { "Atlas session is missing" }
+        val profile = ProfileManager.get(Settings.selectedProfile)
+            ?: error("Atlas profile is missing")
+        require(profile.name == "Atlas" && profile.typed.type == TypedProfile.Type.Local) {
+            "Selected profile is not managed by Atlas"
+        }
+
+        val configContent = AtlasApi.enrollNative(token, deviceLabel())
+        Libbox.checkConfig(configContent)
+
+        val atomicFile = AtomicFile(File(profile.typed.path))
+        val output = atomicFile.startWrite()
+        try {
+            output.write(configContent.toByteArray())
+            atomicFile.finishWrite(output)
+        } catch (error: Throwable) {
+            atomicFile.failWrite(output)
+            throw error
+        }
+        return configContent
     }
 
     fun signOut() {
