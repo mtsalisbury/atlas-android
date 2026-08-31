@@ -31,6 +31,7 @@ import io.nekohasekai.libbox.SystemProxyStatus
 import io.nekohasekai.sfa.Application
 import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.atlas.AtlasEnrollment
+import io.nekohasekai.sfa.atlas.AtlasNetworkTransitionGuard
 import io.nekohasekai.sfa.compose.MainActivity
 import io.nekohasekai.sfa.constant.Action
 import io.nekohasekai.sfa.constant.Alert
@@ -81,13 +82,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     private val notification = ServiceNotification(status, service)
     private lateinit var commandServer: CommandServer
     private val networkTransitionListenerKey = Any()
-    private var lastPhysicalTransport: PhysicalTransport? = null
-    private var networkTransitionHandled = false
-
-    private enum class PhysicalTransport {
-        WIFI,
-        CELLULAR,
-    }
+    private val networkTransitionGuard = AtlasNetworkTransitionGuard()
 
     private var receiverRegistered = false
     private val receiver =
@@ -435,19 +430,15 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     }
 
     private suspend fun startNetworkTransitionGuard() {
-        lastPhysicalTransport = null
-        networkTransitionHandled = false
+        networkTransitionGuard.reset()
         DefaultNetworkListener.start(networkTransitionListenerKey) { network ->
             val transport = physicalTransport(network) ?: return@start
-            val previous = lastPhysicalTransport
-            lastPhysicalTransport = transport
-            if (previous == null || previous == transport || networkTransitionHandled || status.value != Status.Started) {
+            if (!networkTransitionGuard.observe(transport, status.value == Status.Started)) {
                 return@start
             }
-            networkTransitionHandled = true
             Log.i(
                 TAG,
-                "physical_network_transition_refresh from=${previous.name.lowercase()} to=${transport.name.lowercase()}",
+                "physical_network_transition_refresh to=${transport.name.lowercase()}",
             )
             GlobalScope.launch(Dispatchers.IO) {
                 val refreshed = runCatching {
@@ -485,7 +476,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 }
                 if (refreshed.isSuccess) {
                     Settings.atlasConnectionStateOverride = ""
-                    networkTransitionHandled = false
+                    networkTransitionGuard.refreshSucceeded()
                     Log.i(TAG, "physical_network_transition_refresh_succeeded")
                 } else {
                     Settings.atlasConnectionStateOverride = "network_changed"
@@ -499,11 +490,11 @@ class BoxService(private val service: Service, private val platformInterface: Pl
         }
     }
 
-    private fun physicalTransport(network: Network?): PhysicalTransport? {
+    private fun physicalTransport(network: Network?): AtlasNetworkTransitionGuard.Transport? {
         val capabilities = network?.let(Application.connectivity::getNetworkCapabilities) ?: return null
         return when {
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> PhysicalTransport.WIFI
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> PhysicalTransport.CELLULAR
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> AtlasNetworkTransitionGuard.Transport.WIFI
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> AtlasNetworkTransitionGuard.Transport.CELLULAR
             else -> null
         }
     }

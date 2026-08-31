@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="atlas_network_state_channel">Atlas network changes</string>
-    <string name="atlas_network_state_title">Network changed</string>
-    <string name="atlas_network_state_body">Atlas paused your Presence to restore internet access.</string>
-    <string name="atlas_reconnect">Reconnect my Presence</string>
+    <string name="atlas_network_state_title">Atlas has disconnected</string>
+    <string name="atlas_network_state_body">Atlas stopped the failed tunnel. Your normal internet connection is restored; reconnect when ready.</string>
+    <string name="atlas_reconnect">Reconnect</string>
     <string name="atlas_advanced_tools">Advanced tools</string>
     <string name="atlas_advanced_tools_description">Connection and diagnostics</string>
     <string name="atlas_lens">Lens</string>

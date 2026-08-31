@@ -382,6 +382,7 @@ dependencies {
     "androidTestOtherImplementation"(composeBom24)
     "androidTestOtherLegacyImplementation"(composeBom21)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("junit:junit:4.13.2")
 
     // Common Compose-related libraries
     implementation("sh.calvin.reorderable:reorderable:3.1.0")
