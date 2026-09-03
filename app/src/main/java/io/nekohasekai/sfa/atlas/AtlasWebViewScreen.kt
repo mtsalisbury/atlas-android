@@ -71,9 +71,15 @@ private enum class AtlasAndroidHealth(val label: String, val color: Color) {
     Disconnected("Atlas is disconnected", Color(0xFF6B7280)),
 }
 
-private suspend fun atlasHealthReachable(): Boolean = withContext(Dispatchers.IO) {
+// Neutral second target: the control host alone is not an egress verdict
+// (found live 2026-09-03 on Mac: a blip reaching presence.layer9i.com through a
+// working tunnel was reported as a traffic blackhole). Same rule as the Apple
+// clients' AtlasTrafficHealthCheck -- reachable if either answers.
+private const val NEUTRAL_URL = "https://connectivitycheck.gstatic.com/generate_204"
+
+private suspend fun headReachable(url: String): Boolean = withContext(Dispatchers.IO) {
     runCatching {
-        (URL(HEALTH_URL).openConnection() as HttpURLConnection).run {
+        (URL(url).openConnection() as HttpURLConnection).run {
             requestMethod = "HEAD"
             connectTimeout = 1_500
             readTimeout = 1_500
@@ -82,6 +88,9 @@ private suspend fun atlasHealthReachable(): Boolean = withContext(Dispatchers.IO
         }
     }.getOrDefault(false)
 }
+
+private suspend fun atlasHealthReachable(): Boolean =
+    headReachable(HEALTH_URL) || headReachable(NEUTRAL_URL)
 
 private fun networkDescription(context: Context): String {
     val manager = context.getSystemService(ConnectivityManager::class.java)
