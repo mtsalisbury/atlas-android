@@ -75,7 +75,11 @@ private enum class AtlasAndroidHealth(val label: String, val color: Color) {
 // (found live 2026-09-03 on Mac: a blip reaching presence.layer9i.com through a
 // working tunnel was reported as a traffic blackhole). Same rule as the Apple
 // clients' AtlasTrafficHealthCheck -- reachable if either answers.
-private const val NEUTRAL_URL = "https://connectivitycheck.gstatic.com/generate_204"
+// Literal IPs on purpose (2026-09-03, TestFlight 724 driven test): Atlas DNS is
+// DoH to the control host, so a hostname target fails together with a
+// control-host outage; and the control host itself must not count as egress,
+// or a dead default leg with a live management leg reads as healthy.
+private val NEUTRAL_URLS = listOf("https://1.1.1.1/cdn-cgi/trace", "https://8.8.8.8/")
 
 private suspend fun headReachable(url: String): Boolean = withContext(Dispatchers.IO) {
     runCatching {
@@ -90,7 +94,7 @@ private suspend fun headReachable(url: String): Boolean = withContext(Dispatcher
 }
 
 private suspend fun atlasHealthReachable(): Boolean =
-    headReachable(HEALTH_URL) || headReachable(NEUTRAL_URL)
+    NEUTRAL_URLS.any { headReachable(it) }
 
 private fun networkDescription(context: Context): String {
     val manager = context.getSystemService(ConnectivityManager::class.java)
